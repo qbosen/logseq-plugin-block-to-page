@@ -27,17 +27,25 @@ async function main(blockId: string) {
       return Promise.reject("page format not same");
     }
 
-    await removeBlocks(block.children as BlockEntity[]);
+    const children = block.children as BlockEntity[];
+    let targetUUID = srcBlock.uuid;
+    for (let i = 0; i < children.length; i++) {
+      try {
+        await logseq.Editor.moveBlock(children[i].uuid, targetUUID, {
+          children: true,
+          before: true,
+        });
+        targetUUID = children[i].uuid;
+      } catch (error) {
+        console.error("moveBlock error", error);
+        logseq.App.showMsg("move block error", "warning");
+        return;
+      }
+    }
+
     if (!pageRegx.test(block.content)) {
       await logseq.Editor.updateBlock(block.uuid, `[[${block.content}]]`);
     }
-    await insertBatchBlock(srcBlock.uuid, block.children as BlockEntity[]);
-
-    if (srcBlock.content === "") {
-      // insertBatchBlock before 参数无效
-      await logseq.Editor.removeBlock(srcBlock.uuid);
-    }
-
     await logseq.Editor.exitEditingMode();
   }
 }
@@ -52,19 +60,6 @@ logseq
     });
   })
   .catch(console.error);
-
-async function insertBatchBlock(
-  srcBlock: BlockIdentity,
-  blocks: BlockEntity[]
-) {
-  const batchBlocks = toBatchBlocks(blocks);
-
-  debug("insertBatchBlock", srcBlock, batchBlocks);
-  await logseq.Editor.insertBatchBlock(srcBlock, batchBlocks, {
-    sibling: true,
-    before: false,
-  });
-}
 
 async function createPageIfNotExist(pageName: string) {
   let page = await logseq.Editor.getPage(pageName);
@@ -92,13 +87,6 @@ async function createPageIfNotExist(pageName: string) {
         }
       );
     }
-  }
-}
-
-async function removeBlocks(blocks: BlockEntity[]) {
-  for (let i = 0; i < blocks.length; i++) {
-    const child = blocks[i];
-    await logseq.Editor.removeBlock(child.uuid);
   }
 }
 
