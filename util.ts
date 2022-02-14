@@ -11,7 +11,8 @@ export function toBatchBlocks(blocks: BlockEntity[]) {
     children: c.children?.length
       ? toBatchBlocks(c.children as BlockEntity[])
       : undefined,
-    properties: c.properties,
+      // 2022-02-14 content里面包含properties
+    // properties: c.properties,
   }));
 }
 

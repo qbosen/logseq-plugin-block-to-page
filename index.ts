@@ -37,6 +37,7 @@ async function main(blockId: string) {
     await removeBlocks(block.children as BlockEntity[]);
     if (newBlockContent) {
       await logseq.Editor.updateBlock(block.uuid, newBlockContent);
+        debug("newBlockContent:", newBlockContent);
       // propteties param not working...
       // and then remove block property will undo updateBlock...
     }
@@ -124,5 +125,5 @@ async function getLastBlock(pageName: string): Promise<null | BlockEntity> {
 }
 
 function debug(...args: any) {
-  console.debug("block-to-page", ...args);
+  console.info("block-to-page", ...args);
 }
