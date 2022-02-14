@@ -37,7 +37,6 @@ async function main(blockId: string) {
     await removeBlocks(block.children as BlockEntity[]);
     if (newBlockContent) {
       await logseq.Editor.updateBlock(block.uuid, newBlockContent);
-        debug("newBlockContent:", newBlockContent);
       // propteties param not working...
       // and then remove block property will undo updateBlock...
     }
