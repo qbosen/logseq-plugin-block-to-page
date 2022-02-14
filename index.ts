@@ -2,7 +2,7 @@ import "@logseq/libs";
 import { BlockEntity, BlockIdentity } from "@logseq/libs/dist/LSPlugin.user";
 import { toBatchBlocks, mayBeReferenced } from "./util";
 
-async function main(blockId: string) {
+async function main(blockId: string, isPublicPage:boolean = false) {
   const block = await logseq.Editor.getBlock(blockId, {
     includeChildren: true,
   });
@@ -24,7 +24,7 @@ async function main(blockId: string) {
     newBlockContent = block.content.replace(firstLine, `[[${firstLine}]]`);
   }
 
-  await createPageIfNotExist(pageName);
+  await createPageIfNotExist(pageName, isPublicPage);
 
   const srcBlock = await getLastBlock(pageName);
   if (srcBlock) {
@@ -60,6 +60,9 @@ logseq
     logseq.Editor.registerSlashCommand("Turn Into Page", async (e) => {
       main(e.uuid);
     });
+    logseq.Editor.registerSlashCommand("Turn Into Public Page", async (e) => {
+      main(e.uuid, true);
+    });
     logseq.Editor.registerBlockContextMenuItem("Turn into page", async (e) => {
       main(e.uuid);
     });
@@ -79,12 +82,12 @@ async function insertBatchBlock(
   });
 }
 
-async function createPageIfNotExist(pageName: string) {
+async function createPageIfNotExist(pageName: string, isPublicPage: boolean) {
   let page = await logseq.Editor.getPage(pageName);
   if (!page) {
     await logseq.Editor.createPage(
       pageName,
-      {},
+      isPublicPage? {public:true}: {},
       {
         createFirstBlock: true,
         redirect: false,
