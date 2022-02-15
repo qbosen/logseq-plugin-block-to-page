@@ -4,6 +4,14 @@ function hasProperty(block: BlockEntity, propertyKey: string): boolean {
   return block.properties?.[propertyKey] !== undefined;
 }
 
+function propertyKeyChange(properties:any){
+  if(!properties) return properties;
+  let res = {};
+  const repalceFunc = (text:string)=>text.replace(/([A-Z])/g, "-$1").toLowerCase();
+  Object.keys(properties).forEach(k=> res[repalceFunc(k)] = properties[k]);
+  return res;
+}
+
 export function toBatchBlocks(blocks: BlockEntity[]) {
   return blocks.map((c) => ({
     content: c.content,
@@ -11,8 +19,7 @@ export function toBatchBlocks(blocks: BlockEntity[]) {
     children: c.children?.length
       ? toBatchBlocks(c.children as BlockEntity[])
       : undefined,
-      // 2022-02-14 content里面包含properties
-    // properties: c.properties,
+    properties: propertyKeyChange(c.properties),
   }));
 }
 

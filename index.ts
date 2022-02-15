@@ -2,7 +2,7 @@ import "@logseq/libs";
 import { BlockEntity, BlockIdentity } from "@logseq/libs/dist/LSPlugin.user";
 import { toBatchBlocks, mayBeReferenced } from "./util";
 
-async function main(blockId: string, isPublicPage:boolean = false) {
+async function main(blockId: string, isEmbedPage:boolean = false, isPublicPage:boolean = false) {
   const block = await logseq.Editor.getBlock(blockId, {
     includeChildren: true,
   });
@@ -21,7 +21,7 @@ async function main(blockId: string, isPublicPage:boolean = false) {
 
   let newBlockContent = "";
   if (!pageRegx.test(firstLine)) {
-    newBlockContent = block.content.replace(firstLine, `[[${firstLine}]]`);
+    newBlockContent = block.content.replace(firstLine, isEmbedPage? `{{embed [[${firstLine}]]}}` : `[[${firstLine}]]`);
   }
 
   await createPageIfNotExist(pageName, isPublicPage);
@@ -61,7 +61,10 @@ logseq
       main(e.uuid);
     });
     logseq.Editor.registerSlashCommand("Turn Into Public Page", async (e) => {
-      main(e.uuid, true);
+      main(e.uuid, false, true);
+    });
+    logseq.Editor.registerSlashCommand("Turn Into Embed Page", async (e) => {
+      main(e.uuid, true, false);
     });
     logseq.Editor.registerBlockContextMenuItem("Turn into page", async (e) => {
       main(e.uuid);
@@ -74,8 +77,7 @@ async function insertBatchBlock(
   blocks: BlockEntity[]
 ) {
   const batchBlocks = toBatchBlocks(blocks);
-
-  debug("insertBatchBlock", srcBlock, batchBlocks);
+  debug("insertBatchBlock", srcBlock, blocks, batchBlocks);
   await logseq.Editor.insertBatchBlock(srcBlock, batchBlocks, {
     sibling: true,
     before: false,
