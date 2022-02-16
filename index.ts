@@ -1,8 +1,8 @@
 import "@logseq/libs";
 import { BlockEntity, BlockIdentity } from "@logseq/libs/dist/LSPlugin.user";
-import { toBatchBlocks, mayBeReferenced } from "./util";
+import { toBatchBlocks, mayBeReferenced, toRawProperties } from "./util";
 
-async function main(blockId: string, isEmbedPage:boolean = false, isPublicPage:boolean = false) {
+async function main(blockId: string, isEmbedPage: boolean = false, isPublicPage: boolean = false) {
   const block = await logseq.Editor.getBlock(blockId, {
     includeChildren: true,
   });
@@ -21,10 +21,11 @@ async function main(blockId: string, isEmbedPage:boolean = false, isPublicPage:b
 
   let newBlockContent = "";
   if (!pageRegx.test(firstLine)) {
-    newBlockContent = block.content.replace(firstLine, isEmbedPage? `{{embed [[${firstLine}]]}}` : `[[${firstLine}]]`);
+    newBlockContent = block.content.replace(firstLine, isEmbedPage ? `{{embed [[${firstLine}]]}}` : `[[${firstLine}]]`);
   }
 
-  await createPageIfNotExist(pageName, isPublicPage);
+  // create page and pass properties
+  await createPageIfNotExist(pageName, isPublicPage, block.properties);
 
   const srcBlock = await getLastBlock(pageName);
   if (srcBlock) {
@@ -36,7 +37,8 @@ async function main(blockId: string, isEmbedPage:boolean = false, isPublicPage:b
 
     await removeBlocks(block.children as BlockEntity[]);
     if (newBlockContent) {
-      await logseq.Editor.updateBlock(block.uuid, newBlockContent);
+      // properties 似乎是部分更新
+      await logseq.Editor.updateBlock(block.uuid, newBlockContent, {});
       // propteties param not working...
       // and then remove block property will undo updateBlock...
     }
@@ -49,8 +51,13 @@ async function main(blockId: string, isEmbedPage:boolean = false, isPublicPage:b
 
     await logseq.Editor.exitEditingMode();
 
-    if (block.properties?.collapsed) {
-      await logseq.Editor.removeBlockProperty(block.uuid, "collapsed");
+    // 删除原本的属性
+    if (block.properties) {
+      Object.keys(toRawProperties(block.properties)).forEach(async originKey => {
+        debug("remove property:", originKey);
+        await logseq.Editor.removeBlockProperty(block.uuid, originKey);
+      }
+      );
     }
   }
 }
@@ -84,12 +91,20 @@ async function insertBatchBlock(
   });
 }
 
-async function createPageIfNotExist(pageName: string, isPublicPage: boolean) {
+async function createPageIfNotExist(pageName: string, isPublicPage: boolean, pageProperties: any) {
   let page = await logseq.Editor.getPage(pageName);
+  pageProperties = toRawProperties(pageProperties);
+  if (pageProperties?.collapsed) {
+    delete pageProperties.collapsed
+  }
+  if (isPublicPage) {
+    pageProperties.public = true;
+  }
+  debug("createPage", pageName, pageProperties)
   if (!page) {
     await logseq.Editor.createPage(
       pageName,
-      isPublicPage? {public:true}: {},
+      pageProperties,
       {
         createFirstBlock: true,
         redirect: false,

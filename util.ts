@@ -4,11 +4,12 @@ function hasProperty(block: BlockEntity, propertyKey: string): boolean {
   return block.properties?.[propertyKey] !== undefined;
 }
 
-function propertyKeyChange(properties:any){
-  if(!properties) return properties;
+export function toRawProperties(properties: any): any {
+  // 将驼峰的属性 转为 中横线分割的 属性名  lcTags => lc-tags
+  if (!properties) return properties;
   let res = {};
-  const repalceFunc = (text:string)=>text.replace(/([A-Z])/g, "-$1").toLowerCase();
-  Object.keys(properties).forEach(k=> res[repalceFunc(k)] = properties[k]);
+  const repalceFunc = (text: string) => text.replace(/([A-Z])/g, "-$1").toLowerCase();
+  Object.keys(properties).forEach(k => res[repalceFunc(k)] = properties[k]);
   return res;
 }
 
@@ -19,7 +20,7 @@ export function toBatchBlocks(blocks: BlockEntity[]) {
     children: c.children?.length
       ? toBatchBlocks(c.children as BlockEntity[])
       : undefined,
-    properties: propertyKeyChange(c.properties),
+    properties: toRawProperties(c.properties),
   }));
 }
 
