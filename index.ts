@@ -16,7 +16,9 @@ async function main(blockId: string, isEmbedPage: boolean = false, isPublicPage:
 
   let newBlockContent = "";
   if (!pageRegx.test(firstLine)) {
-    newBlockContent = block.content.replace(firstLine, isEmbedPage ? `{{embed [[${firstLine}]]}}` : `[[${firstLine}]]`);
+    //
+    // newBlockContent = block.content.replace(firstLine, isEmbedPage ? `{{embed [[${firstLine}]]}}` : `[[${firstLine}]]`);
+    newBlockContent = isEmbedPage ? `{{embed [[${firstLine}]]}}` : `[[${firstLine}]]`
   }
 
   // create page and pass properties
@@ -46,7 +48,7 @@ async function main(blockId: string, isEmbedPage: boolean = false, isPublicPage:
     }
 
     if (newBlockContent) {
-      await logseq.Editor.updateBlock(block.uuid, newBlockContent);
+      await logseq.Editor.updateBlock(block.uuid, newBlockContent, {});
       // properties param not working...
       // and then remove block property will undo updateBlock...
     }
@@ -74,9 +76,9 @@ logseq
     logseq.Editor.registerSlashCommand("Turn Into Embed Page", async (e) => {
       main(e.uuid, true, false);
     });
-    logseq.Editor.registerBlockContextMenuItem("Turn into page", async (e) => {
-      main(e.uuid);
-    });
+    // logseq.Editor.registerBlockContextMenuItem("Turn into page", async (e) => {
+    //   main(e.uuid);
+    // });
   })
   .catch(console.error);
 
